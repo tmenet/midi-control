@@ -38,7 +38,7 @@ byte maxHue = 240;
 
 /////////////////////////////////////////////
 // Are you using a multiplexer?
-#define USING_MUX 1 //* comment if not using a multiplexer, uncomment if using it.
+//#define USING_MUX 1 //* comment if not using a multiplexer, uncomment if using it.
 
 /////////////////////////////////////////////
 // Are you using encoders?
@@ -103,11 +103,11 @@ Multiplexer4067 mux[N_MUX] = {
 
 /////////////////////////////////////////////
 // BUTTONS
-const int N_BUTTONS = 16; //*  total numbers of buttons. Number of buttons in the Arduino + number of buttons on multiplexer 1 + number of buttons on multiplexer 2...
-const int N_BUTTONS_ARDUINO = 0; //* number of buttons connected straight to the Arduino (in order)
-const int BUTTON_ARDUINO_PIN[N_BUTTONS] = {}; //* pins of each button connected straight to the Arduino
+const int N_BUTTONS = 8; //*  total numbers of buttons. Number of buttons in the Arduino + number of buttons on multiplexer 1 + number of buttons on multiplexer 2...
+const int N_BUTTONS_ARDUINO = 8; //* number of buttons connected straight to the Arduino (in order)
+const int BUTTON_ARDUINO_PIN[N_BUTTONS] = {0,2,3,5,7,16,14,15}; //* pins of each button connected straight to the Arduino
 
-const int CHANNEL_BUTTON_PIN = 3;
+const int CHANNEL_BUTTON_PIN = 1;
 
 //#define USING_CUSTOM_NN 1 //* comment if not using CUSTOM NOTE NUMBERS (scales), uncomment if using it.
 #ifdef USING_CUSTOM_NN
@@ -248,14 +248,14 @@ Serial.println();
 
   ////////////////////////////////////
   //FAST LED
-  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+//  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
   // set master brightness control
   //FastLED.setBrightness(BRIGHTNESS);
 
-  setAllLeds(ch1Hue, 30);// set all leds at once with a hue (hue, randomness)
+//  setAllLeds(ch1Hue, 30);// set all leds at once with a hue (hue, randomness)
 
-  FastLED.show();
+//  FastLED.show();
 
   //////////////////////////////////////
 
@@ -794,9 +794,9 @@ Serial.println(encoderValue[encoderChannel][i]);
       int ledN = number - NOTE;
       byte tempHue = map(value, 0, 127, ch1Hue, maxHue);
 
-      leds[ledIndex[ledN]].setHue(tempHue);
+ //     leds[ledIndex[ledN]].setHue(tempHue);
 
-      FastLED.show();
+ //     FastLED.show();
       //      // insert a delay to keep the framerate modest
       //      FastLED.delay(1000 / FRAMES_PER_SECOND);
     }
@@ -809,9 +809,9 @@ Serial.println(encoderValue[encoderChannel][i]);
       int ledN = number - NOTE;
 
       byte offset = random(0, 20);
-      leds[ledIndex[ledN]].setHue(ch1Hue  + offset);
+ //     leds[ledIndex[ledN]].setHue(ch1Hue  + offset);
 
-      FastLED.show();
+//      FastLED.show();
       //      // insert a delay to keep the framerate modest
       //      FastLED.delay(1000 / FRAMES_PER_SECOND);
     }
@@ -825,8 +825,8 @@ Serial.println(encoderValue[encoderChannel][i]);
 
     while (digitalRead(CHANNEL_BUTTON_PIN) == LOW) {
 
-      setAllLeds(midiChMenuColor, 0); // turn all lights into the menu lights
-      leds[ledIndex[BUTTON_MIDI_CH]].setHue(midiChMenuColor + 60); // turn the specific channel light on
+//      setAllLeds(midiChMenuColor, 0); // turn all lights into the menu lights
+//      leds[ledIndex[BUTTON_MIDI_CH]].setHue(midiChMenuColor + 60); // turn the specific channel light on
       channelMenuOn = true;
 
       // read pins from arduino
@@ -881,28 +881,28 @@ Serial.println(encoderValue[encoderChannel][i]);
           }
         }
       }
-      FastLED.show();
+ //     FastLED.show();
       //      // insert a delay to keep the framerate modest
       //      FastLED.delay(1000 / FRAMES_PER_SECOND);
     }
 
     if (channelMenuOn == true) {
-      setAllLeds(ch1Hue, 30);
+ //     setAllLeds(ch1Hue, 30);
       //Serial.println("menu lights off");
 
     }
     channelMenuOn = false;
     //
-    FastLED.show();
+//    FastLED.show();
     //    // insert a delay to keep the framerate modest
     //    FastLED.delay(1000 / FRAMES_PER_SECOND);
 
   } //end
 
-  void setAllLeds(byte hue_, byte randomness_) {
+/*  void setAllLeds(byte hue_, byte randomness_) {
 
     for (int i = 0; i < NUM_LEDS; i++) {
       byte offset = random(0, randomness_);
       leds[i].setHue(hue_  + offset);
     }
-  }
+  }*/
