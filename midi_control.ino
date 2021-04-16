@@ -1,12 +1,13 @@
 /*
 midi_control.ini
+this version uses pot for pitchwheel data
 */
 
 //////////////////////////////////////
 // If using Fast Led
-#include "FastLED.h"
+//#include "FastLED.h"
 
-FASTLED_USING_NAMESPACE
+//FASTLED_USING_NAMESPACE
 
 #define DATA_PIN    5
 //#define CLK_PIN   4
@@ -14,7 +15,7 @@ FASTLED_USING_NAMESPACE
 #define COLOR_ORDER GRB
 #define NUM_LEDS    16
 #define HUE_OFFSET 90
-CRGB leds[NUM_LEDS];
+//CRGB leds[NUM_LEDS];
 byte ledIndex[NUM_LEDS] = {15, 8, 7, 0, 14, 9, 6, 1, 13, 10, 5, 2, 12, 11, 4, 3};
 
 #define BRIGHTNESS          96
@@ -154,10 +155,11 @@ byte velocity[N_BUTTONS] = {127};
 const int N_POTS = 8; //* total numbers of pots (slide & rotary). Number of pots in the Arduino + number of pots on multiplexer 1 + number of pots on multiplexer 2...
 const int N_POTS_ARDUINO = 8; //* number of pots connected straight to the Arduino
 const int POT_ARDUINO_PIN[N_POTS_ARDUINO] = {A0, A1, A2, A3, A6, A7, A8, A9}; //* pins of each pot connected straight to the Arduino
+const int PITCHWHEEL_CH = 8; // number of analog channel in array above ( starting with 1) that we want to be pitch change command
 
 #define USING_CUSTOM_CC_N 1 //* comment if not using CUSTOM CC NUMBERS, uncomment if using it.
 #ifdef USING_CUSTOM_CC_N
-int POT_CC_N[N_POTS] = {1, 2, 3, 4, 5, 6, 7, 8}; // Add the CC NUMBER of each pot you want
+int POT_CC_N[N_POTS] = {1, 2,  4, 5, 6, 7, 3, 8}; // Add the CC NUMBER of each pot you want
 #endif
 
 #ifdef USING_MUX
@@ -617,7 +619,16 @@ MIDI.sendControlChange(CC + i, potMidiCState[i], MIDI_CH); // CC number, CC valu
 //use if using with ATmega32U4 (micro, pro micro, leonardo...)
 
 #ifdef USING_CUSTOM_CC_N
-controlChange(MIDI_CH, POT_CC_N[i], potMidiCState[i]); //  (channel, CC number,  CC value)
+
+if (POT_CC_N[i]==PITCHWHEEL_CH){
+  int temp = (int) map(potCState[i],32, 997, 0, 16383); // scale actual pot values for accurate pitch extremes
+  temp = constrain( temp, 0, 16383); // constrain map expansion to valid midi limits
+  if ( (temp < 9017) && (temp > 8262)) temp = 8192;   // make dead zone default to center pitch value 8192
+  pitchBendChange(MIDI_CH,temp ) ;
+  
+} else {
+  controlChange(MIDI_CH, POT_CC_N[i], potMidiCState[i]); //  (channel, CC number,  CC value)
+}
 MidiUSB.flush();
 #else
 controlChange(MIDI_CH, CC + i, potMidiCState[i]); //  (channel, CC number,  CC value)
@@ -741,6 +752,13 @@ Serial.println(encoderValue[encoderChannel][i]);
     midiEventPacket_t event = {0x0B, 0xB0 | channel, control, value};
     MidiUSB.sendMIDI(event);
   }
+  void pitchBendChange(byte channel,  int value) {
+    byte lowValue = value & 0x7F;
+    byte highValue = value >> 7;
+    midiEventPacket_t event = {0x0E, 0xE0 | channel, lowValue, highValue};
+    MidiUSB.sendMIDI(event);
+  }
+  
 
 #endif
 
