@@ -176,8 +176,8 @@ int potVar = 0; // Difference between the current and previous state of the pot
 int potMidiCState[N_POTS] = {0}; // Current state of the midi value
 int potMidiPState[N_POTS] = {0}; // Previous state of the midi value
 
-const int TIMEOUT = 300; //* Amount of time the potentiometer will be read after it exceeds the varThreshold
-const int varThreshold = 10; //* Threshold for the potentiometer signal variation
+const int TIMEOUT = 30; //* Amount of time the potentiometer will be read after it exceeds the varThreshold 300
+const int varThreshold = 1; //* Threshold for the potentiometer signal variation 10
 boolean potMoving = true; // If the potentiometer is moving
 unsigned long PTime[N_POTS] = {0}; // Previously stored time
 unsigned long timer[N_POTS] = {0}; // Stores the time that has elapsed since the timer was reset
