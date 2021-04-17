@@ -9,7 +9,7 @@ this version uses pot for pitchwheel data
 
 //FASTLED_USING_NAMESPACE
 
-#define DATA_PIN    5
+//#define DATA_PIN    5
 //#define CLK_PIN   4
 #define LED_TYPE    WS2812
 #define COLOR_ORDER GRB
@@ -39,7 +39,7 @@ byte maxHue = 240;
 
 /////////////////////////////////////////////
 // Are you using a multiplexer?
-//#define USING_MUX 1 //* comment if not using a multiplexer, uncomment if using it.
+#define USING_MUX 1 //* comment if not using a multiplexer, uncomment if using it.
 
 /////////////////////////////////////////////
 // Are you using encoders?
@@ -104,15 +104,16 @@ Multiplexer4067 mux[N_MUX] = {
 
 /////////////////////////////////////////////
 // BUTTONS
-const int N_BUTTONS = 8; //*  total numbers of buttons. Number of buttons in the Arduino + number of buttons on multiplexer 1 + number of buttons on multiplexer 2...
-const int N_BUTTONS_ARDUINO = 8; //* number of buttons connected straight to the Arduino (in order)
+const int N_BUTTONS = 12; //*  total numbers of buttons. Number of buttons in the Arduino + number of buttons on multiplexer 1 + number of buttons on multiplexer 2...
+const int N_BUTTONS_ARDUINO = 0; //* number of buttons connected straight to the Arduino (in order)
 const int BUTTON_ARDUINO_PIN[N_BUTTONS] = {0,2,3,5,7,16,14,15}; //* pins of each button connected straight to the Arduino
 
 const int CHANNEL_BUTTON_PIN = 1;
+const int NOTE_RANGE_BUTTON_PIN = 0; // Future option to add note offset to buttons 
 
 //#define USING_CUSTOM_NN 1 //* comment if not using CUSTOM NOTE NUMBERS (scales), uncomment if using it.
 #ifdef USING_CUSTOM_NN
-int BUTTON_NN[N_BUTTONS] = {36, 40, 44, 48, 37, 41, 45, 49, 38, 42, 46, 50, 39, 43, 47, 51, 52};
+int BUTTON_NN[N_BUTTONS] = {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47};
 
 //* Add the NOTE NUMBER of each button/switch you want
 #endif
@@ -129,7 +130,7 @@ int BUTTON_CC_N[N_BUTTONS] = {12, 16}; //* Add the CC NUMBER of each button/swit
 const int N_BUTTONS_PER_MUX[N_MUX] = {16}; //* number of buttons in each mux (in order)
 const int BUTTON_MUX_PIN[N_MUX][16] = { //* pin of each button of each mux in order
 {
-0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 }, //* pins of the first mux
 // ...
 };
