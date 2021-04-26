@@ -111,6 +111,8 @@ const int BUTTON_ARDUINO_PIN[N_BUTTONS] = {0,2,3,5,7,16,14,15}; //* pins of each
 const int CHANNEL_BUTTON_PIN = 1;
 const int NOTE_RANGE_BUTTON_PIN = 0; // Future option to add note offset to buttons 
 
+int NOTE_OFFSET;  // used to expans note range of buttons
+
 //#define USING_CUSTOM_NN 1 //* comment if not using CUSTOM NOTE NUMBERS (scales), uncomment if using it.
 #ifdef USING_CUSTOM_NN
 int BUTTON_NN[N_BUTTONS] = {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47};
@@ -224,6 +226,7 @@ byte NOTE = 36; //* Lowest NOTE to be used - if not using custom NOTE NUMBER
 byte CC = 1; //* Lowest MIDI CC to be used - if not using custom CC NUMBER
 
 boolean channelMenuOn = false;
+boolean rangeMenuOn = false;
 byte midiChMenuColor = 200;
 
 /////////////////////////////////////////////
@@ -234,6 +237,7 @@ byte midiChMenuColor = 200;
 ThreadController cpu; //thread master, where the other threads will be added
 Thread threadPotentiometers; // thread to control the pots
 Thread threadChannelMenu; // thread to control the pots
+Thread threadRangeMenu;
 
 void setup() {
 
@@ -270,6 +274,7 @@ Serial.println();
   }
 
   pinMode(CHANNEL_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(NOTE_RANGE_BUTTON_PIN , INPUT_PULLUP);
 
 #ifdef pin13 // Initialize pin 13 as an input
 pinMode(BUTTON_ARDUINO_PIN[pin13index], INPUT);
@@ -308,9 +313,13 @@ pinMode(BUTTON_ARDUINO_PIN[pin13index], INPUT);
   // Channel Menu
   threadChannelMenu.setInterval(40); // every how many millisiconds
   threadChannelMenu.onRun(channelMenu); // the function that will be added to the thread
+  //Range Menu
+  threadRangeMenu.setInterval(40); // every how many millisiconds
+  threadRangeMenu.onRun(noterangeMenu);
 
   cpu.add(&threadPotentiometers); // add every thread here
   cpu.add(&threadChannelMenu); // add every thread here
+  cpu.add(&threadRangeMenu); // add every thread here
 
   /////////////////////////////////////////////
   // Encoders
@@ -434,11 +443,11 @@ void buttons() {
 #ifdef USING_CUSTOM_NN
 
             // if using custom NOTE numbers
-            MIDI.sendNoteOn(BUTTON_NN[i], velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
+            MIDI.sendNoteOn(BUTTON_NN[i]+ NOTE_OFFSET, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
 #else
 
             // if not using custom NOTE numbers
-            MIDI.sendNoteOn(NOTE + i, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
+            MIDI.sendNoteOn(NOTE + i + NOTE_OFFSET, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
 #endif
 
 #else // if USING button CC
@@ -459,12 +468,12 @@ void buttons() {
 
             // if using custom NOTE numbers
 
-            noteOn(BUTTON_MIDI_CH, BUTTON_NN[i], velocity[i]);  // channel, note, velocity
+            noteOn(BUTTON_MIDI_CH, BUTTON_NN[i] + NOTE_OFFSET, velocity[i]);  // channel, note, velocity
             MidiUSB.flush();
 #else
 
             // if not using custom NOTE
-            noteOn(BUTTON_MIDI_CH, NOTE + i, velocity[i]);  // channel, note, velocity
+            noteOn(BUTTON_MIDI_CH, NOTE + i + NOTE_OFFSET, velocity[i]);  // channel, note, velocity
             MidiUSB.flush();
 #endif
 
@@ -486,11 +495,11 @@ void buttons() {
 #ifdef USING_CUSTOM_NN
 
             // if using custom NOTE numbers
-            usbMIDI.sendNoteOn(BUTTON_NN[i], velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
+            usbMIDI.sendNoteOn(BUTTON_NN[i] + NOTE_OFFSET, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
 #else
 
             // if not using custom NOTE
-            usbMIDI.sendNoteOn(NOTE + i, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
+            usbMIDI.sendNoteOn(NOTE + i + NOTE_OFFSET, velocity[i], BUTTON_MIDI_CH); // note, velocity, channel
 #endif
 
 #else // if USING button CC
@@ -842,12 +851,12 @@ Serial.println(encoderValue[encoderChannel][i]);
   // Channel Menu
   void channelMenu() {
 
-    while (digitalRead(CHANNEL_BUTTON_PIN) == LOW) {
+    while ( digitalRead(CHANNEL_BUTTON_PIN)== LOW ){  // digitalRead(NOTE_RANGE_BUTTON_PIN) == LOW) {
 
 //      setAllLeds(midiChMenuColor, 0); // turn all lights into the menu lights
 //      leds[ledIndex[BUTTON_MIDI_CH]].setHue(midiChMenuColor + 60); // turn the specific channel light on
       channelMenuOn = true;
-
+      
       // read pins from arduino
       for (int i = 0; i < N_BUTTONS_ARDUINO; i++) {
         buttonCState[i] = digitalRead(BUTTON_ARDUINO_PIN[i]);
@@ -889,13 +898,10 @@ Serial.println(encoderValue[encoderChannel][i]);
           if (buttonPState[i] != buttonCState[i]) {
             lastDebounceTime[i] = millis();
 
-            if (buttonCState[i] == LOW) {
+        
               // DO STUFF
-              BUTTON_MIDI_CH = i;
-              //Serial.print("Channel ");
-              //Serial.println(BUTTON_MIDI_CH);
 
-            }
+              BUTTON_MIDI_CH = i;
             buttonPState[i] = buttonCState[i];
           }
         }
@@ -918,6 +924,88 @@ Serial.println(encoderValue[encoderChannel][i]);
 
   } //end
 
+////////////////////////////////////////////
+  // Note Range Menu
+  void noterangeMenu() {
+
+    while ( digitalRead(NOTE_RANGE_BUTTON_PIN) == LOW ){  
+
+//      setAllLeds(midiChMenuColor, 0); // turn all lights into the menu lights
+//      leds[ledIndex[BUTTON_MIDI_CH]].setHue(midiChMenuColor + 60); // turn the specific channel light on
+      rangeMenuOn = true;
+      
+      // read pins from arduino
+      for (int i = 0; i < N_BUTTONS_ARDUINO; i++) {
+        buttonCState[i] = digitalRead(BUTTON_ARDUINO_PIN[i]);
+      }
+
+#ifdef USING_MUX
+
+      // It will happen if you are using MUX
+      int nButtonsPerMuxSum = N_BUTTONS_ARDUINO; // offsets the buttonCState at every mux reading
+
+      // read the pins from every mux
+      for (int j = 0; j < N_MUX; j++) {
+        for (int i = 0; i < N_BUTTONS_PER_MUX[j]; i++) {
+          buttonCState[i + nButtonsPerMuxSum] = mux[j].readChannel(BUTTON_MUX_PIN[j][i]);
+          // Scale values to 0-1
+          if (buttonCState[i + nButtonsPerMuxSum] > buttonMuxThreshold) {
+            buttonCState[i + nButtonsPerMuxSum] = HIGH;
+          }
+          else {
+            buttonCState[i + nButtonsPerMuxSum] = LOW;
+          }
+        }
+        nButtonsPerMuxSum += N_BUTTONS_PER_MUX[j];
+      }
+#endif
+
+      for (int i = 0; i < N_BUTTONS; i++) { // Read the buttons connected to the Arduino
+
+#ifdef pin13
+
+        // It will happen if you are using pin 13
+        if (i == pin13index) {
+          buttonCState[i] = !buttonCState[i]; // inverts the pin 13 because it has a pull down resistor instead of a pull up
+        }
+#endif
+
+        if ((millis() - lastDebounceTime[i]) > debounceDelay) {
+
+          if (buttonPState[i] != buttonCState[i]) {
+            lastDebounceTime[i] = millis();
+
+        
+              // DO STUFF
+
+             NOTE_OFFSET = i * N_BUTTONS;
+             if (NOTE_OFFSET>84) NOTE_OFFSET=84; // keep within playable notes
+              Serial.print("NOTE_OFFSET ");
+              Serial.println(NOTE_OFFSET);
+            
+
+           
+            buttonPState[i] = buttonCState[i];
+          }
+        }
+      }
+ //     FastLED.show();
+      //      // insert a delay to keep the framerate modest
+      //      FastLED.delay(1000 / FRAMES_PER_SECOND);
+    }
+
+    if (channelMenuOn == true) {
+ //     setAllLeds(ch1Hue, 30);
+      //Serial.println("menu lights off");
+
+    }
+    rangeMenuOn = false;
+    //
+//    FastLED.show();
+    //    // insert a delay to keep the framerate modest
+    //    FastLED.delay(1000 / FRAMES_PER_SECOND);
+
+  } //end
 /*  void setAllLeds(byte hue_, byte randomness_) {
 
     for (int i = 0; i < NUM_LEDS; i++) {
